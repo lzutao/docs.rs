@@ -11,9 +11,9 @@ impl DocBuilder {
     /// Updates crates.io-index repository and adds new crates into build queue.
     /// Returns size of queue
     pub fn get_new_crates(&mut self) -> Result<i64> {
-        let conn = r#try!(connect_db());
-        let index = r#try!(Index::from_path_or_cloned(&self.options.crates_io_index_path));
-        let mut changes = r#try!(index.fetch_changes());
+        let conn = connect_db()?;
+        let index = Index::from_path_or_cloned(&self.options.crates_io_index_path)?;
+        let mut changes = index.fetch_changes()?;
 
         // I belive this will fix ordering of queue if we get more than one crate from changes
         changes.reverse();
@@ -36,14 +36,14 @@ impl DocBuilder {
 
     /// Builds packages from queue
     pub fn build_packages_queue(&mut self) -> Result<usize> {
-        let conn = r#try!(connect_db());
+        let conn = connect_db()?;
         let mut build_count = 0;
 
-        for row in &r#try!(conn.query("SELECT id, name, version
+        for row in &conn.query("SELECT id, name, version
                                      FROM queue
                                      WHERE attempt < 5
                                      ORDER BY id ASC",
-                                    &[])) {
+                                    &[])? {
             let id: i32 = row.get(0);
             let name: String = row.get(1);
             let version: String = row.get(2);

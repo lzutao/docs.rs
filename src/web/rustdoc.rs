@@ -145,8 +145,8 @@ pub fn rustdoc_html_server_handler(req: &mut Request<'_, '_>) -> IronResult<Resp
     let name = router.find("crate").unwrap_or("").to_string();
     let version = router.find("version");
     let conn = extension!(req, Pool);
-    let version = r#try!(match_version(&conn, &name, version)
-        .ok_or(IronError::new(Nope::ResourceNotFound, status::NotFound)));
+    let version = match_version(&conn, &name, version)
+        .ok_or(IronError::new(Nope::ResourceNotFound, status::NotFound))?;
     let mut req_path = req.url.path();
 
     // remove name and version from path
