@@ -1,12 +1,11 @@
 use std::env;
 use std::path::PathBuf;
 
-use clap::{Arg, App, SubCommand};
-use cratesfyi::{DocBuilder, DocBuilderOptions, db};
-use cratesfyi::utils::build_doc;
-use cratesfyi::start_web_server;
+use clap::{App, Arg, SubCommand};
 use cratesfyi::db::add_path_into_database;
-
+use cratesfyi::start_web_server;
+use cratesfyi::utils::build_doc;
+use cratesfyi::{db, DocBuilder, DocBuilderOptions};
 
 pub fn main() {
     logger_init();
@@ -14,116 +13,172 @@ pub fn main() {
     let matches = App::new("cratesfyi")
         .version(cratesfyi::BUILD_VERSION)
         .about(env!("CARGO_PKG_DESCRIPTION"))
-        .subcommand(SubCommand::with_name("doc")
-            .about("Builds documentation of a crate")
-            .arg(Arg::with_name("CRATE_NAME")
-                .index(1)
-                .required(true)
-                .help("Crate name"))
-            .arg(Arg::with_name("CRATE_VERSION")
-                .index(2)
-                .required(false)
-                .help("Crate version"))
-            .arg(Arg::with_name("TARGET")
-                .index(3)
-                .required(false)
-                .help("The target platform to compile for")))
-        .subcommand(SubCommand::with_name("build")
-            .about("Builds documentation in a chroot environment")
-            .arg(Arg::with_name("PREFIX")
-                .short("P")
-                .long("prefix")
-                .takes_value(true))
-            .arg(Arg::with_name("DESTINATION")
-                .short("d")
-                .long("destination")
-                .help("Sets destination path")
-                .takes_value(true))
-            .arg(Arg::with_name("CHROOT_PATH")
-                .short("c")
-                .long("chroot-path")
-                .help("Sets chroot path")
-                .takes_value(true))
-            .arg(Arg::with_name("CHROOT_USER")
-                .short("u")
-                .long("chroot-user")
-                .help("Sets chroot user name")
-                .takes_value(true))
-            .arg(Arg::with_name("CONTAINER_NAME")
-                .short("n")
-                .long("container-name")
-                .help("Sets name of the container")
-                .takes_value(true))
-            .arg(Arg::with_name("CRATES_IO_INDEX_PATH")
-                .long("crates-io-index-path")
-                .help("Sets crates.io-index path")
-                .takes_value(true))
-            .arg(Arg::with_name("SKIP_IF_EXISTS")
-                .short("s")
-                .long("skip")
-                .help("Skips building documentation if \
-                                                      documentation exists"))
-            .arg(Arg::with_name("SKIP_IF_LOG_EXISTS")
-                .long("skip-if-log-exists")
-                .help("Skips building documentation if build \
-                                                      log exists"))
-            .arg(Arg::with_name("KEEP_BUILD_DIRECTORY")
-                .short("-k")
-                .long("keep-build-directory")
-                .help("Keeps build directory after build."))
-            .subcommand(SubCommand::with_name("world").about("Builds documentation of every \
-                                                              crate"))
-            .subcommand(SubCommand::with_name("crate")
-                .about("Builds documentation for a crate")
-                .arg(Arg::with_name("CRATE_NAME")
-                    .index(1)
-                    .required(true)
-                    .help("Crate name"))
-                .arg(Arg::with_name("CRATE_VERSION")
-                    .index(2)
-                    .required(true)
-                    .help("Version of crate")))
-            .subcommand(SubCommand::with_name("add-essential-files")
-                .about("Adds essential files for rustc"))
-            .subcommand(SubCommand::with_name("lock").about("Locks cratesfyi daemon to stop \
-                                                              building new crates"))
-            .subcommand(SubCommand::with_name("unlock")
-                .about("Unlocks cratesfyi daemon to continue \
-                                                              building new crates"))
-            .subcommand(SubCommand::with_name("print-options")))
-        .subcommand(SubCommand::with_name("start-web-server")
-            .about("Starts web server")
-            .arg(Arg::with_name("SOCKET_ADDR")
-                .index(1)
-                .required(false)
-                .help("Socket address to listen to")))
+        .subcommand(
+            SubCommand::with_name("doc")
+                .about("Builds documentation of a crate")
+                .arg(
+                    Arg::with_name("CRATE_NAME")
+                        .index(1)
+                        .required(true)
+                        .help("Crate name"),
+                )
+                .arg(
+                    Arg::with_name("CRATE_VERSION")
+                        .index(2)
+                        .required(false)
+                        .help("Crate version"),
+                )
+                .arg(
+                    Arg::with_name("TARGET")
+                        .index(3)
+                        .required(false)
+                        .help("The target platform to compile for"),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("build")
+                .about("Builds documentation in a chroot environment")
+                .arg(
+                    Arg::with_name("PREFIX")
+                        .short("P")
+                        .long("prefix")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("DESTINATION")
+                        .short("d")
+                        .long("destination")
+                        .help("Sets destination path")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("CHROOT_PATH")
+                        .short("c")
+                        .long("chroot-path")
+                        .help("Sets chroot path")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("CHROOT_USER")
+                        .short("u")
+                        .long("chroot-user")
+                        .help("Sets chroot user name")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("CONTAINER_NAME")
+                        .short("n")
+                        .long("container-name")
+                        .help("Sets name of the container")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("CRATES_IO_INDEX_PATH")
+                        .long("crates-io-index-path")
+                        .help("Sets crates.io-index path")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("SKIP_IF_EXISTS")
+                        .short("s")
+                        .long("skip")
+                        .help(
+                            "Skips building documentation if \
+                             documentation exists",
+                        ),
+                )
+                .arg(
+                    Arg::with_name("SKIP_IF_LOG_EXISTS")
+                        .long("skip-if-log-exists")
+                        .help(
+                            "Skips building documentation if build \
+                             log exists",
+                        ),
+                )
+                .arg(
+                    Arg::with_name("KEEP_BUILD_DIRECTORY")
+                        .short("-k")
+                        .long("keep-build-directory")
+                        .help("Keeps build directory after build."),
+                )
+                .subcommand(SubCommand::with_name("world").about(
+                    "Builds documentation of every \
+                     crate",
+                ))
+                .subcommand(
+                    SubCommand::with_name("crate")
+                        .about("Builds documentation for a crate")
+                        .arg(
+                            Arg::with_name("CRATE_NAME")
+                                .index(1)
+                                .required(true)
+                                .help("Crate name"),
+                        )
+                        .arg(
+                            Arg::with_name("CRATE_VERSION")
+                                .index(2)
+                                .required(true)
+                                .help("Version of crate"),
+                        ),
+                )
+                .subcommand(
+                    SubCommand::with_name("add-essential-files")
+                        .about("Adds essential files for rustc"),
+                )
+                .subcommand(SubCommand::with_name("lock").about(
+                    "Locks cratesfyi daemon to stop \
+                     building new crates",
+                ))
+                .subcommand(SubCommand::with_name("unlock").about(
+                    "Unlocks cratesfyi daemon to continue \
+                     building new crates",
+                ))
+                .subcommand(SubCommand::with_name("print-options")),
+        )
+        .subcommand(
+            SubCommand::with_name("start-web-server")
+                .about("Starts web server")
+                .arg(
+                    Arg::with_name("SOCKET_ADDR")
+                        .index(1)
+                        .required(false)
+                        .help("Socket address to listen to"),
+                ),
+        )
         .subcommand(SubCommand::with_name("daemon").about("Starts cratesfyi daemon"))
-        .subcommand(SubCommand::with_name("database")
-            .about("Database operations")
-            .subcommand(SubCommand::with_name("migrate")
-                .about("Run database migrations")
-                .arg(Arg::with_name("VERSION")))
-            .subcommand(SubCommand::with_name("update-github-fields")
-                .about("Updates github stats for crates."))
-            .subcommand(SubCommand::with_name("add-directory")
-                .about("Adds a directory into database")
-                .arg(Arg::with_name("DIRECTORY")
-                    .index(1)
-                    .required(true)
-                    .help("Path of file or \
-                                                                      directory"))
-                .arg(Arg::with_name("PREFIX")
-                    .index(2)
-                    .help("Prefix of files in \
-                                                                      database")))
-            .subcommand(SubCommand::with_name("update-release-activity"))
-            .about("Updates montly release activity \
-                                                              chart")
-            .subcommand(SubCommand::with_name("update-search-index"))
-            .about("Updates search index"))
+        .subcommand(
+            SubCommand::with_name("database")
+                .about("Database operations")
+                .subcommand(
+                    SubCommand::with_name("migrate")
+                        .about("Run database migrations")
+                        .arg(Arg::with_name("VERSION")),
+                )
+                .subcommand(
+                    SubCommand::with_name("update-github-fields")
+                        .about("Updates github stats for crates."),
+                )
+                .subcommand(
+                    SubCommand::with_name("add-directory")
+                        .about("Adds a directory into database")
+                        .arg(Arg::with_name("DIRECTORY").index(1).required(true).help(
+                            "Path of file or \
+                             directory",
+                        ))
+                        .arg(Arg::with_name("PREFIX").index(2).help(
+                            "Prefix of files in \
+                             database",
+                        )),
+                )
+                .subcommand(SubCommand::with_name("update-release-activity"))
+                .about(
+                    "Updates montly release activity \
+                     chart",
+                )
+                .subcommand(SubCommand::with_name("update-search-index"))
+                .about("Updates search index"),
+        )
         .get_matches();
-
-
 
     // doc subcommand
     if let Some(matches) = matches.subcommand_matches("doc") {
@@ -181,12 +236,17 @@ pub fn main() {
             docbuilder.save_cache().expect("Failed to save cache");
         } else if let Some(matches) = matches.subcommand_matches("crate") {
             docbuilder.load_cache().expect("Failed to load cache");
-            docbuilder.build_package(matches.value_of("CRATE_NAME").unwrap(),
-                               matches.value_of("CRATE_VERSION").unwrap())
+            docbuilder
+                .build_package(
+                    matches.value_of("CRATE_NAME").unwrap(),
+                    matches.value_of("CRATE_VERSION").unwrap(),
+                )
                 .expect("Building documentation failed");
             docbuilder.save_cache().expect("Failed to save cache");
         } else if let Some(_) = matches.subcommand_matches("add-essential-files") {
-            docbuilder.add_essential_files().expect("Failed to add essential files");
+            docbuilder
+                .add_essential_files()
+                .expect("Failed to add essential files");
         } else if let Some(_) = matches.subcommand_matches("lock") {
             docbuilder.lock().expect("Failed to lock");
         } else if let Some(_) = matches.subcommand_matches("unlock") {
@@ -194,19 +254,21 @@ pub fn main() {
         } else if let Some(_) = matches.subcommand_matches("print-options") {
             println!("{:?}", docbuilder.options());
         }
-
     } else if let Some(matches) = matches.subcommand_matches("database") {
         if let Some(matches) = matches.subcommand_matches("migrate") {
-            let version = matches.value_of("VERSION").map(|v| v.parse::<i64>()
-                                                          .expect("Version should be an integer"));
+            let version = matches
+                .value_of("VERSION")
+                .map(|v| v.parse::<i64>().expect("Version should be an integer"));
             db::migrate(version).expect("Failed to run database migrations");
         } else if let Some(_) = matches.subcommand_matches("update-github-fields") {
             cratesfyi::utils::github_updater().expect("Failed to update github fields");
         } else if let Some(matches) = matches.subcommand_matches("add-directory") {
-            add_path_into_database(&db::connect_db().unwrap(),
-                                   matches.value_of("PREFIX").unwrap_or(""),
-                                   matches.value_of("DIRECTORY").unwrap())
-                .expect("Failed to add directory into database");
+            add_path_into_database(
+                &db::connect_db().unwrap(),
+                matches.value_of("PREFIX").unwrap_or(""),
+                matches.value_of("DIRECTORY").unwrap(),
+            )
+            .expect("Failed to add directory into database");
         } else if let Some(_) = matches.subcommand_matches("update-release-activity") {
             // FIXME: This is actually util command not database
             cratesfyi::utils::update_release_activity().expect("Failed to update release activity");
@@ -215,7 +277,9 @@ pub fn main() {
             db::update_search_index(&conn).expect("Failed to update search index");
         }
     } else if let Some(matches) = matches.subcommand_matches("start-web-server") {
-        start_web_server(Some(matches.value_of("SOCKET_ADDR").unwrap_or("0.0.0.0:3000")));
+        start_web_server(Some(
+            matches.value_of("SOCKET_ADDR").unwrap_or("0.0.0.0:3000"),
+        ));
     } else if let Some(_) = matches.subcommand_matches("daemon") {
         cratesfyi::utils::start_daemon();
     } else {
@@ -223,18 +287,19 @@ pub fn main() {
     }
 }
 
-
-
 fn logger_init() {
     use std::io::Write;
 
     let mut builder = env_logger::Builder::new();
     builder.format(|buf, record| {
-        writeln!(buf, "{} [{}] {}: {}",
-                time::now().strftime("%Y/%m/%d %H:%M:%S").unwrap(),
-                record.level(),
-                record.target(),
-                record.args())
+        writeln!(
+            buf,
+            "{} [{}] {}: {}",
+            time::now().strftime("%Y/%m/%d %H:%M:%S").unwrap(),
+            record.level(),
+            record.target(),
+            record.args()
+        )
     });
     builder.parse(&env::var("RUST_LOG").unwrap_or("cratesfyi=info".to_owned()));
     builder.init();

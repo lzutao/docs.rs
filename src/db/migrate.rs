@@ -7,7 +7,6 @@ use postgres::transaction::Transaction;
 use schemamama::{Migration, Migrator, Version};
 use schemamama_postgres::{PostgresAdapter, PostgresMigration};
 
-
 /// Creates a new PostgresMigration from upgrade and downgrade queries.
 /// Downgrade query should return database to previous state.
 ///
@@ -32,18 +31,25 @@ macro_rules! migration {
         }
         impl PostgresMigration for Amigration {
             fn up(&self, transaction: &Transaction<'_>) -> Result<(), PostgresError> {
-                info!("Applying migration {}: {}", self.version(), self.description());
+                info!(
+                    "Applying migration {}: {}",
+                    self.version(),
+                    self.description()
+                );
                 transaction.batch_execute($up).map(|_| ())
             }
             fn down(&self, transaction: &Transaction<'_>) -> Result<(), PostgresError> {
-                info!("Removing migration {}: {}", self.version(), self.description());
+                info!(
+                    "Removing migration {}: {}",
+                    self.version(),
+                    self.description()
+                );
                 transaction.batch_execute($down).map(|_| ())
             }
         }
         Box::new(Amigration)
     }};
 }
-
 
 pub fn migrate(version: Option<Version>) -> CratesfyiResult<()> {
     let conn = connect_db()?;
@@ -52,14 +58,13 @@ pub fn migrate(version: Option<Version>) -> CratesfyiResult<()> {
 
     let mut migrator = Migrator::new(adapter);
 
-    let migrations: Vec<Box<dyn PostgresMigration>> = vec![
-        migration!(
-            // version
-            1,
-            // description
-            "Initial database schema",
-            // upgrade query
-            "CREATE TABLE crates (
+    let migrations: Vec<Box<dyn PostgresMigration>> = vec![migration!(
+        // version
+        1,
+        // description
+        "Initial database schema",
+        // upgrade query
+        "CREATE TABLE crates (
                  id SERIAL PRIMARY KEY,
                  name VARCHAR(255) UNIQUE NOT NULL,
                  latest_version_id INT DEFAULT 0,
@@ -165,11 +170,10 @@ pub fn migrate(version: Option<Version>) -> CratesfyiResult<()> {
              );
              CREATE INDEX ON releases (release_time DESC);
              CREATE INDEX content_idx ON crates USING gin(content);",
-            // downgrade query
-            "DROP TABLE authors, author_rels, keyword_rels, keywords, owner_rels,
+        // downgrade query
+        "DROP TABLE authors, author_rels, keyword_rels, keywords, owner_rels,
                         owners, releases, crates, builds, queue, files, config;"
-        ),
-    ];
+    )];
 
     for migration in migrations {
         migrator.register(migration);

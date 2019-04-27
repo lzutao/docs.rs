@@ -1,11 +1,9 @@
 //! Updates crates.io index and builds new packages
 
-
 use super::DocBuilder;
 use crate::db::connect_db;
 use crate::error::Result;
 use crates_index_diff::{ChangeKind, Index};
-
 
 impl DocBuilder {
     /// Updates crates.io-index repository and adds new crates into build queue.
@@ -19,13 +17,16 @@ impl DocBuilder {
         changes.reverse();
 
         for krate in changes.iter().filter(|k| k.kind != ChangeKind::Yanked) {
-            conn.execute("INSERT INTO queue (name, version) VALUES ($1, $2)",
-                         &[&krate.name, &krate.version])
-                .ok();
+            conn.execute(
+                "INSERT INTO queue (name, version) VALUES ($1, $2)",
+                &[&krate.name, &krate.version],
+            )
+            .ok();
             debug!("{}-{} added into build queue", krate.name, krate.version);
         }
 
-        let queue_count = conn.query("SELECT COUNT(*) FROM queue WHERE attempt < 5", &[])
+        let queue_count = conn
+            .query("SELECT COUNT(*) FROM queue WHERE attempt < 5", &[])
             .unwrap()
             .get(0)
             .get(0);
@@ -33,17 +34,18 @@ impl DocBuilder {
         Ok(queue_count)
     }
 
-
     /// Builds packages from queue
     pub fn build_packages_queue(&mut self) -> Result<usize> {
         let conn = connect_db()?;
         let mut build_count = 0;
 
-        for row in &conn.query("SELECT id, name, version
+        for row in &conn.query(
+            "SELECT id, name, version
                                      FROM queue
                                      WHERE attempt < 5
                                      ORDER BY id ASC",
-                                    &[])? {
+            &[],
+        )? {
             let id: i32 = row.get(0);
             let name: String = row.get(1);
             let version: String = row.get(2);
@@ -55,12 +57,14 @@ impl DocBuilder {
                 }
                 Err(e) => {
                     // Increase attempt count
-                    let _ = conn.execute("UPDATE queue SET attempt = attempt + 1 WHERE id = $1",
-                                         &[&id]);
-                    error!("Failed to build package {}-{} from queue: {}",
-                           name,
-                           version,
-                           e)
+                    let _ = conn.execute(
+                        "UPDATE queue SET attempt = attempt + 1 WHERE id = $1",
+                        &[&id],
+                    );
+                    error!(
+                        "Failed to build package {}-{} from queue: {}",
+                        name, version, e
+                    )
                 }
             }
         }
@@ -71,8 +75,8 @@ impl DocBuilder {
 
 #[cfg(test)]
 mod test {
-    use std::path::PathBuf;
     use crate::{DocBuilder, DocBuilderOptions};
+    use std::path::PathBuf;
 
     #[test]
     #[ignore]
@@ -86,7 +90,6 @@ mod test {
         }
         assert!(res.is_ok());
     }
-
 
     #[test]
     #[ignore]
