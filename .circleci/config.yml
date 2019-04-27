@@ -4,7 +4,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/rust:1
+      - image: rustlang/rust
     steps:
       - checkout
       - run:
