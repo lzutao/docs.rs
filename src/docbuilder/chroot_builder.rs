@@ -132,8 +132,8 @@ impl DocBuilder {
                     build_success: true,
                     have_doc: self.have_documentation(&package, default_target),
                     have_examples: self.have_examples(&package),
-                    rustc_version: rustc_version,
-                    cratesfyi_version: cratesfyi_version,
+                    rustc_version,
+                    cratesfyi_version,
                 }
             }
             Err(e) => {
@@ -142,8 +142,8 @@ impl DocBuilder {
                     build_success: false,
                     have_doc: false,
                     have_examples: self.have_examples(&package),
-                    rustc_version: rustc_version,
-                    cratesfyi_version: cratesfyi_version,
+                    rustc_version,
+                    cratesfyi_version,
                 }
             }
         }

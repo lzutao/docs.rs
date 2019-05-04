@@ -31,10 +31,10 @@ impl Default for DocBuilderOptions {
             generate_paths(cwd);
 
         DocBuilderOptions {
-            prefix: prefix,
-            destination: destination,
-            chroot_path: chroot_path,
-            crates_io_index_path: crates_io_index_path,
+            prefix,
+            destination,
+            chroot_path,
+            crates_io_index_path,
 
             chroot_user: "cratesfyi".to_string(),
             container_name: "cratesfyi-container".to_string(),
@@ -77,10 +77,10 @@ impl DocBuilderOptions {
         let (prefix, destination, chroot_path, crates_io_index_path) =
             generate_paths(prefix);
         DocBuilderOptions {
-            prefix: prefix,
-            destination: destination,
-            chroot_path: chroot_path,
-            crates_io_index_path: crates_io_index_path,
+            prefix,
+            destination,
+            chroot_path,
+            crates_io_index_path,
 
             ..Default::default()
         }

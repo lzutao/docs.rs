@@ -28,7 +28,7 @@ pub struct DocBuilder {
 impl DocBuilder {
     pub fn new(options: DocBuilderOptions) -> DocBuilder {
         DocBuilder {
-            options: options,
+            options,
             cache: BTreeSet::new(),
             db_cache: BTreeSet::new(),
         }

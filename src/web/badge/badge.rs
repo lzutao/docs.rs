@@ -57,10 +57,10 @@ impl Badge {
             return Err(String::from("status and subject must not be empty"));
         }
         Ok(Badge {
-            options: options,
-            font: font,
-            scale: scale,
-            offset: offset,
+            options,
+            font,
+            scale,
+            offset,
         })
     }
 
